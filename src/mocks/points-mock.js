@@ -8,6 +8,7 @@ import {
   CITIES
 } from '../const.js';
 import { DESTINATIONS } from './destinations-mock.js';
+import { nanoid } from 'nanoid';
 
 function generateRoutePoint() {
   const cityName = getRandomArrayItem(CITIES);
@@ -19,7 +20,7 @@ function generateRoutePoint() {
   const availableOffers = [];
 
   return {
-    id: crypto.randomUUID(),
+    id: nanoid(),
     cityName,
     type,
     destinationId: destination.id,

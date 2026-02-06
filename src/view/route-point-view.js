@@ -29,6 +29,9 @@ function createPointTemplate(point, allOffersByType) {
     </li>
   `).join('');
 
+  if (!point) {
+    return '';
+  }
   const favoriteBtnClass = isFavorite
     ? 'event__favorite-btn event__favorite-btn--active'
     : 'event__favorite-btn';
@@ -74,12 +77,14 @@ export default class RoutePointView extends AbstractView {
   #point = null;
   #offers = null;
   #onOpenEditButtonClick = null;
+  #handleFavoriteClick = null;
 
-  constructor({ point, offers, onEditClick }) {
+  constructor({ point, offers, onEditClick, onFavoriteClick }) {
     super();
     this.#point = point;
     this.#offers = offers;
     this.#onOpenEditButtonClick = onEditClick;
+    this.#handleFavoriteClick = onFavoriteClick;
     this.#setEventListeners();
   }
 
@@ -89,10 +94,16 @@ export default class RoutePointView extends AbstractView {
 
   #setEventListeners() {
     this.element.querySelector('.event__rollup-btn').addEventListener('click', this.#onOpenEditButtonClickHandler);
+    this.element.querySelector('.event__favorite-btn ').addEventListener('click', this.#favoriteClickHandler);
   }
 
   #onOpenEditButtonClickHandler = (evt) => {
     evt.preventDefault();
     this.#onOpenEditButtonClick();
+  };
+
+  #favoriteClickHandler = (evt) => {
+    evt.preventDefault();
+    this.#handleFavoriteClick();
   };
 }

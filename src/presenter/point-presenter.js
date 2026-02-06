@@ -1,11 +1,7 @@
 import RoutePointView from '../view/route-point-view.js';
 import EditFormView from '../view/edit-form-view.js';
 import { replace, remove, render } from '../framework/render.js';
-
-const Mode = {
-  DEFAULT: 'DEFAULT',
-  FAVOURITES: 'EDITING',
-};
+import { MODE } from '../const.js';
 
 export default class PointPresenter {
   #pointListContainer = null;
@@ -16,7 +12,7 @@ export default class PointPresenter {
   #offers = null;
   #handleDataChange = null;
   #handleModeChange = null;
-  #mode = Mode.DEFAULT;
+  #mode = MODE.DEFAULT;
 
   constructor({ pointListContainer, onDataChange, onModeChange }) {
     this.#pointListContainer = pointListContainer;
@@ -45,11 +41,11 @@ export default class PointPresenter {
       onFormSubmit: this.#handleFormSubmit,
     });
 
-    if (this.#mode === Mode.DEFAULT) {
+    if (this.#mode === MODE.DEFAULT) {
       render(this.#pointComponent, this.#pointListContainer);
     }
 
-    if (this.#mode === Mode.EDITING) {
+    if (this.#mode === MODE.EDITING) {
       replace(this.#pointEditComponent, prevTaskEditComponent);
     }
 
@@ -57,7 +53,7 @@ export default class PointPresenter {
   }
 
   resetView() {
-    if (this.#mode !== Mode.DEFAULT) {
+    if (this.#mode !== MODE.DEFAULT) {
       this.#replaceFormToPoint();
     }
   }
@@ -66,13 +62,13 @@ export default class PointPresenter {
     replace(this.#pointEditComponent, this.#pointComponent);
     document.addEventListener('keydown', this.#escKeyDownHandler);
     this.#handleModeChange();
-    this.#mode = Mode.EDITING;
+    this.#mode = MODE.EDITING;
   }
 
   #replaceFormToPoint() {
     replace(this.#pointComponent, this.#pointEditComponent);
     document.removeEventListener('keydown', this.#escKeyDownHandler);
-    this.#mode = Mode.DEFAULT;
+    this.#mode = MODE.DEFAULT;
   }
 
   #escKeyDownHandler = (evt) => {

@@ -14,17 +14,18 @@ export default class PointPresenter {
   #handleModeChange = null;
   #mode = MODE.DEFAULT;
 
-  constructor({ pointListContainer, onDataChange, onModeChange }) {
+  constructor({ pointListContainer, onDataChange, onModeChange, destination, offers }) {
     this.#pointListContainer = pointListContainer;
     this.#handleDataChange = onDataChange;
     this.#handleModeChange = onModeChange;
-  }
-
-  init(point, destination, offers) {
-    const prevTaskEditComponent = this.#pointEditComponent;
-    this.#point = point;
     this.#destination = destination;
     this.#offers = offers;
+  }
+
+  init(point) {
+    const prevPointComponent = this.#pointComponent;
+    const prevPointEditComponent = this.#pointEditComponent;
+    this.#point = point;
 
     this.#pointComponent = new RoutePointView({
       point: this.#point,
@@ -41,15 +42,21 @@ export default class PointPresenter {
       onFormSubmit: this.#handleFormSubmit,
     });
 
-    if (this.#mode === MODE.DEFAULT) {
+    if (prevPointComponent === null || prevPointEditComponent === null) {
       render(this.#pointComponent, this.#pointListContainer);
+      return;
+    }
+
+    if (this.#mode === MODE.DEFAULT) {
+      replace(this.#pointComponent, prevPointComponent);
     }
 
     if (this.#mode === MODE.EDITING) {
-      replace(this.#pointEditComponent, prevTaskEditComponent);
+      replace(this.#pointEditComponent, prevPointEditComponent);
     }
 
-    remove(prevTaskEditComponent);
+    remove(prevPointComponent);
+    remove(prevPointEditComponent);
   }
 
   resetView() {
@@ -79,20 +86,7 @@ export default class PointPresenter {
   };
 
   #handleFavoriteClick = () => {
-    const newIsFavorite = !this.#point.isFavorite;
-    this.#point.isFavorite = newIsFavorite;
-    this.#handleDataChange({ ...this.#point, isFavorite: newIsFavorite });
-
-    const newPointComponent = new RoutePointView({
-      point: this.#point,
-      destination: this.#destination,
-      offers: this.#offers,
-      onEditClick: this.#handleEditClick.bind(this),
-      onFavoriteClick: this.#handleFavoriteClick.bind(this),
-    });
-
-    replace(newPointComponent, this.#pointComponent);
-    this.#pointComponent = newPointComponent;
+    this.#handleDataChange({ ...this.#point, isFavorite: !this.#point.isFavorite, });
   };
 
   #handleEditClick = () => {

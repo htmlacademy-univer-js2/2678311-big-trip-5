@@ -7,7 +7,6 @@ import { render, RenderPosition } from '../framework/render.js';
 
 export default class MainPresenter {
   #tripModel = null;
-  // #mainContainer = null;
   #pointListComponent = new PointListView();
   #tripInfoComponent = new TripInfoView();
   #filtersComponent = new FiltersView();
@@ -57,16 +56,21 @@ export default class MainPresenter {
     const pointPresenter = new PointPresenter({
       pointListContainer: this.#pointListComponent.element,
       onDataChange: this.#handlePointChange,
-      onModeChange: this.#handleModeChange
+      onModeChange: this.#handleModeChange,
+      destination,
+      offers
     });
-    pointPresenter.init(point, destination, offers);
+    pointPresenter.init(point);
     this.#pointPresenters.set(point.id, pointPresenter);
   }
 
   #handlePointChange = (updatedPoint) => {
-    if (this.#mainPoint.updatePoint) {
-      this.#mainPoint.updatePoint(updatedPoint);
+    if (!updatedPoint || !updatedPoint.id) {
+      return;
     }
+    const index = this.#tripModel.points.findIndex((point) => point && point.id === updatedPoint.id);
+    this.#tripModel.points[index] = updatedPoint;
+    this.#pointPresenters.get(updatedPoint.id).init(updatedPoint);
   };
 
   #handleModeChange = () => {

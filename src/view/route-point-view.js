@@ -1,13 +1,13 @@
 import dayjs from 'dayjs';
 import AbstractView from '../framework/view/abstract-view.js';
-import { formatDuration, getRandomSubarray } from '../utils.js';
+import { formatDuration } from '../utils.js';
 
 const DATE_ATTR_FORMAT = 'YYYY-MM-DD';
 const DATE_DISPLAY_FORMAT = 'MMM DD';
 const TIME_FORMAT = 'HH:mm';
 
 function createPointTemplate(point, allOffersByType) {
-  const { type, cityName, basePrice, isFavorite } = point;
+  const { type, cityName, basePrice, isFavorite, offers: selectedOfferIds } = point;
 
   const start = new Date(point.startTime);
   const end = new Date(point.endTime);
@@ -19,7 +19,7 @@ function createPointTemplate(point, allOffersByType) {
   const duration = formatDuration(start, end);
 
   const availableOffers = allOffersByType[type] || [];
-  const selectedOffers = getRandomSubarray(availableOffers);
+  const selectedOffers = availableOffers.filter((offer) => selectedOfferIds.includes(offer.id));
 
   const offersList = selectedOffers.map((offer) => `
     <li class="event__offer">

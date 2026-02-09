@@ -186,7 +186,6 @@ function createEditFormTemplate(data) {
 export default class EditFormView extends AbstractView {
   #data = null;
   #handleFormSubmit = null;
-  // #point = null;
 
   constructor({ point, destination, offers, onFormSubmit }) {
     super();

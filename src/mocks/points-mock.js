@@ -1,4 +1,4 @@
-import { getRandomIntInRange, getRandomArrayItem, getRandomDate, addRandomDuration } from '../utils.js';
+import { getRandomIntInRange, getRandomArrayItem, getRandomDate, addRandomDuration, getRandomSubarray } from '../utils.js';
 import {
   TYPES,
   MIN_BASE_PRICE,
@@ -8,6 +8,7 @@ import {
   CITIES
 } from '../const.js';
 import { DESTINATIONS } from './destinations-mock.js';
+import { OFFERS } from './offers-mock.js';
 import { nanoid } from 'nanoid';
 
 function generateRoutePoint() {
@@ -17,7 +18,10 @@ function generateRoutePoint() {
   const startTime = getRandomDate();
   const endTime = addRandomDuration(startTime, MAX_DURATION_HOURS);
   const basePrice = getRandomIntInRange(MIN_BASE_PRICE, MAX_BASE_PRICE);
-  const availableOffers = [];
+
+  const availableOffersForType = OFFERS[type] || [];
+  const selectedOffers = getRandomSubarray(availableOffersForType);
+  const selectedOfferIds = selectedOffers.map((offer) => offer.id);
 
   return {
     id: nanoid(),
@@ -27,7 +31,7 @@ function generateRoutePoint() {
     startTime,
     endTime,
     basePrice,
-    offers: availableOffers
+    offers: selectedOfferIds
   };
 }
 

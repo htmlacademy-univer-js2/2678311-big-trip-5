@@ -58,11 +58,19 @@ const MAX_SENTENCES = 5;
 
 const MAX_DURATION_HOURS = 12;
 
-const POINT_COUNT = 3;
+const POINT_COUNT = 10;
 
 const MODE = {
   DEFAULT: 'DEFAULT',
   FAVOURITES: 'EDITING',
+};
+
+const SORT_TYPE = {
+  DAY: 'day',
+  EVENT: 'event',
+  TIME: 'time',
+  PRICE: 'price',
+  OFFER: 'offer'
 };
 
 export {
@@ -80,5 +88,6 @@ export {
   MAX_SENTENCES,
   MAX_DURATION_HOURS,
   POINT_COUNT,
-  MODE
+  MODE,
+  SORT_TYPE
 };

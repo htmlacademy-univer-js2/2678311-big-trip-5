@@ -4,15 +4,19 @@ import SortView from '../view/sort-view.js';
 import PointListView from '../view/point-list-view.js';
 import PointPresenter from './point-presenter.js';
 import { render, RenderPosition } from '../framework/render.js';
+import { sortPointByDay, sortPointByTime, sortPointByPrice, updateItem } from '../utils.js';
+import { SORT_TYPE } from '../const.js';
 
 export default class MainPresenter {
   #tripModel = null;
   #pointListComponent = new PointListView();
   #tripInfoComponent = new TripInfoView();
   #filtersComponent = new FiltersView();
-  #sortComponent = new SortView();
+  #sortComponent = null;
   #pointPresenters = new Map();
-  #mainPoint = [];
+  #currentSortType = SORT_TYPE.DAY;
+  #sourcedPoints = [];
+  #points = [];
 
   constructor(tripModel) {
     this.tripMainContainer = document.querySelector('.trip-main');
@@ -24,18 +28,21 @@ export default class MainPresenter {
 
   init() {
     const { points, destination, offers } = this.#tripModel;
+    this.#sourcedPoints = [...points];
+    this.#points = [...this.#sourcedPoints];
 
     this.#renderTripInfo();
     this.#renderFilters();
     this.#renderSort();
     this.#renderPointList();
-
-    points.forEach((point) => {
-      this.#renderPoint(point, destination, offers);
-    });
+    this.#renderPoint(points, destination, offers);
   }
 
   #renderSort() {
+    this.#sortComponent = new SortView({
+      onSortTypeChange: this.#handleSortTypeChange
+    });
+
     render(this.#sortComponent, this.tripEventsContainer, RenderPosition.AFTERBEGIN);
   }
 
@@ -51,29 +58,70 @@ export default class MainPresenter {
     render(this.#pointListComponent, this.tripEventsContainer);
   }
 
-  #renderPoint(point, destination, offers) {
-
-    const pointPresenter = new PointPresenter({
-      pointListContainer: this.#pointListComponent.element,
-      onDataChange: this.#handlePointChange,
-      onModeChange: this.#handleModeChange,
-      destination,
-      offers
+  #renderPoint() {
+    this.#points.forEach((point) => {
+      const pointPresenter = new PointPresenter({
+        pointListContainer: this.#pointListComponent.element,
+        onDataChange: this.#handlePointChange,
+        onModeChange: this.#handleModeChange,
+        destination: this.#tripModel.destination,
+        offers: this.#tripModel.offers
+      });
+      pointPresenter.init(point);
+      this.#pointPresenters.set(point.id, pointPresenter);
     });
-    pointPresenter.init(point);
-    this.#pointPresenters.set(point.id, pointPresenter);
   }
 
   #handlePointChange = (updatedPoint) => {
     if (!updatedPoint || !updatedPoint.id) {
       return;
     }
-    const index = this.#tripModel.points.findIndex((point) => point && point.id === updatedPoint.id);
-    this.#tripModel.points[index] = updatedPoint;
-    this.#pointPresenters.get(updatedPoint.id).init(updatedPoint);
+    this.#sourcedPoints = updateItem(this.#sourcedPoints, updatedPoint);
+    this.#sortPoints(this.#currentSortType);
+    this.#clearPointList();
+    this.#renderPoint();
   };
 
   #handleModeChange = () => {
     this.#pointPresenters.forEach((presenter) => presenter.resetView());
   };
+
+  #handleSortTypeChange = (sortType) => {
+    if (this.#currentSortType === sortType) {
+      return;
+    }
+
+    this.#sortPoints(sortType);
+    this.#clearPointList();
+    this.#renderPoint();
+  };
+
+  #sortPoints(sortType) {
+    this.#points = [...this.#sourcedPoints];
+
+    switch (sortType) {
+      case SORT_TYPE.DAY:
+        this.#points.sort(sortPointByDay);
+        break;
+      case SORT_TYPE.TIME:
+        this.#points.sort(sortPointByTime);
+        break;
+      case SORT_TYPE.PRICE:
+        this.#points.sort(sortPointByPrice);
+        break;
+      default:
+        sortType = SORT_TYPE.DAY;
+        this.#points = [...this.#sourcedPoints];
+        break;
+    }
+
+    this.#currentSortType = sortType;
+  }
+
+  #clearPointList() {
+    this.#pointPresenters.forEach((presenter) => presenter.destroy());
+    this.#pointPresenters.clear();
+
+    // this.#pointListComponent.element.innerHTML = '';
+  }
 }

@@ -209,3 +209,4 @@ export default class EditFormView extends AbstractView {
     this.#handleFormSubmit();
   };
 }
+

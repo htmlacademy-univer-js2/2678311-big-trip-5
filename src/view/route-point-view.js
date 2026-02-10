@@ -1,13 +1,13 @@
 import dayjs from 'dayjs';
 import AbstractView from '../framework/view/abstract-view.js';
-import { formatDuration, getRandomSubarray } from '../utils.js';
+import { formatDuration } from '../utils.js';
 
 const DATE_ATTR_FORMAT = 'YYYY-MM-DD';
 const DATE_DISPLAY_FORMAT = 'MMM DD';
 const TIME_FORMAT = 'HH:mm';
 
 function createPointTemplate(point, allOffersByType) {
-  const { type, cityName, basePrice, isFavorite } = point;
+  const { type, cityName, basePrice, isFavorite, offers: selectedOfferIds } = point;
 
   const start = new Date(point.startTime);
   const end = new Date(point.endTime);
@@ -19,7 +19,7 @@ function createPointTemplate(point, allOffersByType) {
   const duration = formatDuration(start, end);
 
   const availableOffers = allOffersByType[type] || [];
-  const selectedOffers = getRandomSubarray(availableOffers);
+  const selectedOffers = availableOffers.filter((offer) => selectedOfferIds.includes(offer.id));
 
   const offersList = selectedOffers.map((offer) => `
     <li class="event__offer">
@@ -29,6 +29,9 @@ function createPointTemplate(point, allOffersByType) {
     </li>
   `).join('');
 
+  if (!point) {
+    return '';
+  }
   const favoriteBtnClass = isFavorite
     ? 'event__favorite-btn event__favorite-btn--active'
     : 'event__favorite-btn';
@@ -74,12 +77,14 @@ export default class RoutePointView extends AbstractView {
   #point = null;
   #offers = null;
   #onOpenEditButtonClick = null;
+  #handleFavoriteClick = null;
 
-  constructor({ point, offers, onEditClick }) {
+  constructor({ point, offers, onEditClick, onFavoriteClick }) {
     super();
     this.#point = point;
     this.#offers = offers;
     this.#onOpenEditButtonClick = onEditClick;
+    this.#handleFavoriteClick = onFavoriteClick;
     this.#setEventListeners();
   }
 
@@ -89,10 +94,16 @@ export default class RoutePointView extends AbstractView {
 
   #setEventListeners() {
     this.element.querySelector('.event__rollup-btn').addEventListener('click', this.#onOpenEditButtonClickHandler);
+    this.element.querySelector('.event__favorite-btn ').addEventListener('click', this.#favoriteClickHandler);
   }
 
   #onOpenEditButtonClickHandler = (evt) => {
     evt.preventDefault();
     this.#onOpenEditButtonClick();
+  };
+
+  #favoriteClickHandler = (evt) => {
+    evt.preventDefault();
+    this.#handleFavoriteClick();
   };
 }

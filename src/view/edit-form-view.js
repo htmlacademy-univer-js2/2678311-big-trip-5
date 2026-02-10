@@ -3,12 +3,6 @@ import AbstractView from '../framework/view/abstract-view.js';
 
 const DATE_FORMAT = 'DD/MM/YY HH:mm';
 
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
-
 function createTypeSelector(currentType) {
   const types = [
     'Taxi', 'Bus', 'Train', 'Ship', 'Drive',
@@ -37,7 +31,7 @@ function createTypeSelector(currentType) {
 }
 
 function createDestinationsList(destinations) {
-  return destinations.map((d) => `<option value="${escapeHtml(d.name)}">`).join('');
+  return destinations.map((d) => `<option value="${d.name}">`).join('');
 }
 
 function findDestinationByName(destinations, name) {
@@ -58,7 +52,7 @@ function createOffersList(offersByType, pointType, selectedOfferIds) {
           ${isChecked ? 'checked' : ''}
         >
         <label class="event__offer-label" for="offer-${offer.id}">
-          <span class="event__offer-title">${escapeHtml(offer.title)}</span>
+          <span class="event__offer-title">${offer.title}</span>
           &plus;&euro;&nbsp;
           <span class="event__offer-price">${offer.price}</span>
         </label>
@@ -80,7 +74,7 @@ function createEditFormTemplate(data) {
     : (destination.find((d) => d.id === point.destinationId)?.name || '');
 
   const selectedDest = findDestinationByName(destination, selectedDestName);
-  const description = selectedDest ? escapeHtml(selectedDest.description) : '';
+  const description = selectedDest ? (selectedDest.description) : '';
 
   const now = new Date();
   const startTime = isCreating
@@ -120,14 +114,14 @@ function createEditFormTemplate(data) {
           </div>
           <div class="event__field-group event__field-group--destination">
             <label class="event__label event__type-output" for="event-destination-1">
-              ${escapeHtml(currentType)}
+              ${currentType}
             </label>
             <input
               class="event__input event__input--destination"
               id="event-destination-1"
               type="text"
               name="event-destination"
-              value="${escapeHtml(selectedDestName)}"
+              value="${selectedDestName}"
               list="destination-list-1"
             >
             <datalist id="destination-list-1">
@@ -192,13 +186,11 @@ function createEditFormTemplate(data) {
 export default class EditFormView extends AbstractView {
   #data = null;
   #handleFormSubmit = null;
-  #handleFormClick = null;
 
-  constructor({ point, destination, offers, onFormSubmit, onFormClick }) {
+  constructor({ point, destination, offers, onFormSubmit }) {
     super();
     this.#data = { point, destination, offers };
     this.#handleFormSubmit = onFormSubmit;
-    this.#handleFormClick = onFormClick;
 
     this.element.querySelector('form').addEventListener('submit', this.#formSubmitHandler);
     this.element.querySelector('.event__rollup-btn').addEventListener('click', this.#formClickHandler);
@@ -210,7 +202,7 @@ export default class EditFormView extends AbstractView {
 
   #formSubmitHandler = (evt) => {
     evt.preventDefault();
-    this.#handleFormSubmit();
+    this.#handleFormSubmit(this.#data.point);
   };
 
   #formClickHandler = () => {

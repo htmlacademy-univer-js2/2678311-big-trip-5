@@ -121,7 +121,5 @@ export default class MainPresenter {
   #clearPointList() {
     this.#pointPresenters.forEach((presenter) => presenter.destroy());
     this.#pointPresenters.clear();
-
-    // this.#pointListComponent.element.innerHTML = '';
   }
 }

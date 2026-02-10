@@ -43,14 +43,14 @@ function formatDuration(start, end) {
 }
 
 function sortPointByDay(pointA, pointB) {
-  const dateA = new Date(pointA.dateFrom);
-  const dateB = new Date(pointB.dateFrom);
+  const dateA = new Date(pointA.startTime);
+  const dateB = new Date(pointB.startTime);
   return dateA - dateB;
 }
 
 function sortPointByTime(pointA, pointB) {
-  const durationA = new Date(pointA.dateTo) - new Date(pointA.dateFrom);
-  const durationB = new Date(pointB.dateTo) - new Date(pointB.dateFrom);
+  const durationA = new Date(pointA.endTime) - new Date(pointA.startTime);
+  const durationB = new Date(pointB.endTime) - new Date(pointB.startTime);
   return durationB - durationA;
 }
 

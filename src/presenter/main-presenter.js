@@ -15,7 +15,6 @@ export default class MainPresenter {
   #sortComponent = null;
   #pointPresenters = new Map();
   #currentSortType = SORT_TYPE.DAY;
-  #sourcedPoints = [];
   #points = [];
 
   constructor(tripModel) {
@@ -28,8 +27,7 @@ export default class MainPresenter {
 
   init() {
     const { points, destination, offers } = this.#tripModel;
-    this.#sourcedPoints = [...points];
-    this.#points = [...this.#sourcedPoints];
+    this.#points = [...points];
 
     this.#renderTripInfo();
     this.#renderFilters();
@@ -76,7 +74,7 @@ export default class MainPresenter {
     if (!updatedPoint || !updatedPoint.id) {
       return;
     }
-    this.#sourcedPoints = updateItem(this.#sourcedPoints, updatedPoint);
+    this.#points = updateItem(this.#points, updatedPoint);
     this.#sortPoints(this.#currentSortType);
     this.#clearPointList();
     this.#renderPoint();
@@ -97,8 +95,6 @@ export default class MainPresenter {
   };
 
   #sortPoints(sortType) {
-    this.#points = [...this.#sourcedPoints];
-
     switch (sortType) {
       case SORT_TYPE.DAY:
         this.#points.sort(sortPointByDay);
@@ -111,7 +107,7 @@ export default class MainPresenter {
         break;
       default:
         sortType = SORT_TYPE.DAY;
-        this.#points = [...this.#sourcedPoints];
+        this.#points = [...this.#points];
         break;
     }
 

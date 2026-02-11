@@ -59,7 +59,7 @@ export default class Sort extends AbstractView {
   };
 
   updateSortType(sortType) {
-    if (this.currentSortType === sortType) {
+    if (this.#currentSortType === sortType) {
       return;
     }
     this.#currentSortType = sortType;

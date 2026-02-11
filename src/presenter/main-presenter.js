@@ -29,6 +29,8 @@ export default class MainPresenter {
     const { points, destination, offers } = this.#tripModel;
     this.#points = [...points];
 
+    this.#sortPoints(this.#currentSortType);
+
     this.#renderTripInfo();
     this.#renderFilters();
     this.#renderSort();
@@ -38,6 +40,7 @@ export default class MainPresenter {
 
   #renderSort() {
     this.#sortComponent = new SortView({
+      currentSortType: this.#currentSortType,
       onSortTypeChange: this.#handleSortTypeChange
     });
 
@@ -90,6 +93,7 @@ export default class MainPresenter {
     }
 
     this.#sortPoints(sortType);
+    // this.#sortComponent.updateSortType(sortType);
     this.#clearPointList();
     this.#renderPoint();
   };

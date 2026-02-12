@@ -42,6 +42,26 @@ function formatDuration(start, end) {
   return `${String(hours).padStart(2, '0')}H ${String(minutes).padStart(2, '0')}M`;
 }
 
+function sortPointByDay(pointA, pointB) {
+  const dateA = new Date(pointA.startTime);
+  const dateB = new Date(pointB.startTime);
+  return dateA - dateB;
+}
+
+function sortPointByTime(pointA, pointB) {
+  const durationA = new Date(pointA.endTime) - new Date(pointA.startTime);
+  const durationB = new Date(pointB.endTime) - new Date(pointB.startTime);
+  return durationB - durationA;
+}
+
+function sortPointByPrice(pointA, pointB) {
+  return pointB.basePrice - pointA.basePrice;
+}
+
+function updateItem(items, update) {
+  return items.map((item) => item.id === update.id ? update : item);
+}
+
 export {
   getRandomInt,
   getRandomIntInRange,
@@ -51,4 +71,8 @@ export {
   addRandomDuration,
   generatePictureUrl,
   formatDuration,
+  sortPointByDay,
+  sortPointByTime,
+  sortPointByPrice,
+  updateItem
 };

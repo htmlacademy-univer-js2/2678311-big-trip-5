@@ -40,6 +40,7 @@ export default class PointPresenter {
       destination: this.#destination,
       offers: this.#offers,
       onFormSubmit: this.#handleFormSubmit,
+      onRollupClick: this.#handleRollupClick,
     });
 
     if (prevPointComponent === null || prevPointEditComponent === null) {
@@ -57,6 +58,11 @@ export default class PointPresenter {
 
     remove(prevPointComponent);
     remove(prevPointEditComponent);
+  }
+
+  destroy() {
+    remove(this.#pointComponent);
+    remove(this.#pointEditComponent);
   }
 
   resetView() {
@@ -91,6 +97,10 @@ export default class PointPresenter {
 
   #handleEditClick = () => {
     this.#replacePointToForm();
+  };
+
+  #handleRollupClick = () => {
+    this.#replaceFormToPoint();
   };
 
   #handleFormSubmit = (point) => {

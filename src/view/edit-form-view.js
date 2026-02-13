@@ -1,7 +1,4 @@
-import dayjs from 'dayjs';
-import AbstractView from '../framework/view/abstract-view.js';
-
-const DATE_FORMAT = 'DD/MM/YY HH:mm';
+import AbstractStatefulView from '../framework/view/abstract-stateful-view.js';
 
 function createTypeSelector(currentType) {
   const types = [
@@ -61,32 +58,44 @@ function createOffersList(offersByType, pointType, selectedOfferIds) {
   }).join('');
 }
 
-function createEditFormTemplate(data) {
-  const { point, destination, offers } = data;
+function formatDateTime(date) {
+  const d = new Date(date);
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = String(d.getFullYear()).slice(-2);
+  const hours = String(d.getHours()).padStart(2, '0');
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  return `${day}/${month}/${year} ${hours}:${minutes}`;
+}
+
+function createEditFormTemplate(state) {
+  const { point, destination, offers } = state;
   const isCreating = !point;
 
   const currentType = isCreating ? 'Flight' : point.type;
   const typeSelector = createTypeSelector(currentType);
 
   const destinationsList = createDestinationsList(destination);
-  const selectedDestName = isCreating
-    ? (destination[0]?.name || '')
-    : (destination.find((d) => d.id === point.destinationId)?.name || '');
 
-  const selectedDest = findDestinationByName(destination, selectedDestName);
-  const description = selectedDest ? (selectedDest.description) : '';
+  const selectedDest = isCreating
+    ? destination[0] || null
+    : destination.find((d) => d.id === point.destinationId) || destination[0] || null;
+
+  const selectedDestName = selectedDest ? selectedDest.name : '';
+  const description = selectedDest ? selectedDest.description : '';
+  // const pictures = selectedDest ? selectedDest.pictures || [] : [];
 
   const now = new Date();
   const startTime = isCreating
-    ? dayjs(now).format(DATE_FORMAT)
-    : dayjs(point.startTime).format(DATE_FORMAT);
+    ? formatDateTime(now)
+    : formatDateTime(point.startTime);
   const endTime = isCreating
-    ? dayjs(now).add(2, 'hour').format(DATE_FORMAT)
-    : dayjs(point.endTime).format(DATE_FORMAT);
+    ? formatDateTime(new Date(now.getTime() + 2 * 60 * 60 * 1000))
+    : formatDateTime(point.endTime);
 
   const price = isCreating ? '' : point.basePrice;
 
-  const selectedOffers = isCreating ? [] : point.offers;
+  const selectedOffers = isCreating ? [] : (point.offers || []);
   const offersList = createOffersList(offers, currentType, selectedOffers);
 
   return `
@@ -100,7 +109,7 @@ function createEditFormTemplate(data) {
                 class="event__type-icon"
                 width="17"
                 height="17"
-                src="img/icons/${currentType.toLowerCase().replace('-', '')}.png"
+                src="img/icons/${currentType.toLowerCase()}.png"
                 alt="Event type icon"
               >
             </label>
@@ -176,6 +185,11 @@ function createEditFormTemplate(data) {
           <section class="event__section event__section--destination">
             <h3 class="event__section-title event__section-title--destination">Destination</h3>
             <p class="event__destination-description">${description}</p>
+            ${(selectedDest?.pictures || []).map((pictureUrl) => `
+              <div class="event__photo-wrapper">
+                <img class="event__photo" src="${pictureUrl}" alt="Destination photo">
+              </div>
+            `).join('')}
           </section>
         </section>
       </form>
@@ -183,30 +197,97 @@ function createEditFormTemplate(data) {
   `;
 }
 
-export default class EditFormView extends AbstractView {
-  #data = null;
+export default class EditFormView extends AbstractStatefulView {
   #handleFormSubmit = null;
+  #handleFormClose = null;
 
-  constructor({ point, destination, offers, onFormSubmit }) {
+  constructor({ point, destination, offers, onFormSubmit, onFormClose }) {
     super();
-    this.#data = { point, destination, offers };
+    this._setState({ point, destination, offers });
     this.#handleFormSubmit = onFormSubmit;
+    this.#handleFormClose = onFormClose;
 
-    this.element.querySelector('form').addEventListener('submit', this.#formSubmitHandler);
-    this.element.querySelector('.event__rollup-btn').addEventListener('click', this.#formClickHandler);
+    this._restoreHandlers();
   }
 
   get template() {
-    return createEditFormTemplate(this.#data);
+    return createEditFormTemplate(this._state);
+  }
+
+  _restoreHandlers() {
+    this.element.querySelector('form').addEventListener('submit', this.#formSubmitHandler);
+    this.element.querySelector('.event__rollup-btn').addEventListener('click', this.#formCloseHandler);
+    this.element.querySelector('.event__type-group').addEventListener('change', this.#typeChangeHandler);
+    this.element.querySelector('.event__input--destination').addEventListener('change', this.#destinationChangeHandler);
+    this.element.querySelector('.event__available-offers').addEventListener('change', this.#offerChangeHandler);
+    this.element.querySelector('.event__input--price').addEventListener('input', this.#priceInputHandler);
+  }
+
+  reset(point) {
+    this.updateElement({
+      point: { ...point }
+    });
   }
 
   #formSubmitHandler = (evt) => {
     evt.preventDefault();
-    this.#handleFormSubmit(this.#data.point);
+    this.#handleFormSubmit(this._state.point);
   };
 
-  #formClickHandler = () => {
-    this.#handleFormSubmit();
+  #formCloseHandler = () => {
+    this.#handleFormClose();
+  };
+
+  #typeChangeHandler = (evt) => {
+    evt.preventDefault();
+
+    this.updateElement({
+      point: {
+        ...this._state.point,
+        type: evt.target.value,
+        offers: []
+      }
+    });
+  };
+
+  #destinationChangeHandler = (evt) => {
+    evt.preventDefault();
+    const newDestination = findDestinationByName(this._state.destination, evt.target.value);
+
+    if (newDestination) {
+      this.updateElement({
+        point: {
+          ...this._state.point,
+          destinationId: newDestination.id
+        }
+      });
+    }
+  };
+
+  #offerChangeHandler = (evt) => {
+    evt.preventDefault();
+    const offerId = evt.target.id.replace('offer-', '');
+
+    const currentOffers = this._state.point?.offers || [];
+    const newOffers = evt.target.checked
+      ? [...currentOffers, offerId]
+      : currentOffers.filter((id) => id !== offerId);
+
+    this.updateElement({
+      point: {
+        ...this._state.point,
+        offers: newOffers
+      }
+    });
+  };
+
+  #priceInputHandler = (evt) => {
+    evt.preventDefault();
+    this.updateElement({
+      point: {
+        ...this._state.point,
+        basePrice: evt.target.value
+      }
+    });
   };
 }
-

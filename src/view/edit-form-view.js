@@ -1,11 +1,16 @@
 import AbstractStatefulView from '../framework/view/abstract-stateful-view.js';
+import { formatDateTime } from '../utils.js';
+
+const types = [
+  'Taxi', 'Bus', 'Train', 'Ship', 'Drive',
+  'Flight', 'Check-in', 'Sightseeing', 'Restaurant'
+];
+
+function getCanonicalType(formValue) {
+  return types.find((type) => type.toLowerCase().replace('-', '') === formValue) || formValue;
+}
 
 function createTypeSelector(currentType) {
-  const types = [
-    'Taxi', 'Bus', 'Train', 'Ship', 'Drive',
-    'Flight', 'Check-in', 'Sightseeing', 'Restaurant'
-  ];
-
   return types.map((type) => {
     const lowerType = type.toLowerCase().replace('-', '');
     const isChecked = type === currentType;
@@ -27,12 +32,10 @@ function createTypeSelector(currentType) {
   }).join('');
 }
 
-function createDestinationsList(destinations) {
-  return destinations.map((d) => `<option value="${d.name}">`).join('');
-}
-
-function findDestinationByName(destinations, name) {
-  return destinations.find((d) => d.name === name) || destinations[0] || null;
+function createDestinationsOptions(destinations, selectedId) {
+  return destinations.map((d) =>
+    `<option value="${d.id}" ${d.id === selectedId ? 'selected' : ''}>${d.name}</option>`
+  ).join('');
 }
 
 function createOffersList(offersByType, pointType, selectedOfferIds) {
@@ -46,6 +49,7 @@ function createOffersList(offersByType, pointType, selectedOfferIds) {
           id="offer-${offer.id}"
           type="checkbox"
           name="offer-${offer.id}"
+          value="${offer.id}"
           ${isChecked ? 'checked' : ''}
         >
         <label class="event__offer-label" for="offer-${offer.id}">
@@ -58,16 +62,6 @@ function createOffersList(offersByType, pointType, selectedOfferIds) {
   }).join('');
 }
 
-function formatDateTime(date) {
-  const d = new Date(date);
-  const day = String(d.getDate()).padStart(2, '0');
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const year = String(d.getFullYear()).slice(-2);
-  const hours = String(d.getHours()).padStart(2, '0');
-  const minutes = String(d.getMinutes()).padStart(2, '0');
-  return `${day}/${month}/${year} ${hours}:${minutes}`;
-}
-
 function createEditFormTemplate(state) {
   const { point, destination, offers } = state;
   const isCreating = !point;
@@ -75,15 +69,13 @@ function createEditFormTemplate(state) {
   const currentType = isCreating ? 'Flight' : point.type;
   const typeSelector = createTypeSelector(currentType);
 
-  const destinationsList = createDestinationsList(destination);
-
   const selectedDest = isCreating
     ? destination[0] || null
     : destination.find((d) => d.id === point.destinationId) || destination[0] || null;
 
-  const selectedDestName = selectedDest ? selectedDest.name : '';
+  const selectedDestId = selectedDest ? selectedDest.id : '';
   const description = selectedDest ? selectedDest.description : '';
-  // const pictures = selectedDest ? selectedDest.pictures || [] : [];
+  const destinationsOptions = createDestinationsOptions(destination, selectedDestId);
 
   const now = new Date();
   const startTime = isCreating
@@ -125,17 +117,13 @@ function createEditFormTemplate(state) {
             <label class="event__label event__type-output" for="event-destination-1">
               ${currentType}
             </label>
-            <input
+            <select
               class="event__input event__input--destination"
               id="event-destination-1"
-              type="text"
               name="event-destination"
-              value="${selectedDestName}"
-              list="destination-list-1"
             >
-            <datalist id="destination-list-1">
-              ${destinationsList}
-            </datalist>
+              ${destinationsOptions}
+            </select>
           </div>
           <div class="event__field-group event__field-group--time">
             <label class="visually-hidden" for="event-start-time-1">From</label>
@@ -210,6 +198,10 @@ export default class EditFormView extends AbstractStatefulView {
     this._restoreHandlers();
   }
 
+  static parsePointToState(point) {
+    return { point: { ...point } };
+  }
+
   get template() {
     return createEditFormTemplate(this._state);
   }
@@ -224,9 +216,7 @@ export default class EditFormView extends AbstractStatefulView {
   }
 
   reset(point) {
-    this.updateElement({
-      point: { ...point }
-    });
+    this.updateElement(EditFormView.parsePointToState(point));
   }
 
   #formSubmitHandler = (evt) => {
@@ -240,33 +230,28 @@ export default class EditFormView extends AbstractStatefulView {
 
   #typeChangeHandler = (evt) => {
     evt.preventDefault();
+    const canonicalType = getCanonicalType(evt.target.value);
 
     this.updateElement({
-      point: {
-        ...this._state.point,
-        type: evt.target.value,
-        offers: []
-      }
+      ...this._state.point,
+      type: canonicalType,
+      offers: []
     });
   };
 
   #destinationChangeHandler = (evt) => {
     evt.preventDefault();
-    const newDestination = findDestinationByName(this._state.destination, evt.target.value);
+    const destinationId = evt.target.value;
 
-    if (newDestination) {
-      this.updateElement({
-        point: {
-          ...this._state.point,
-          destinationId: newDestination.id
-        }
-      });
-    }
+    this.updateElement({
+      ...this._state.point,
+      destinationId
+    });
   };
 
   #offerChangeHandler = (evt) => {
     evt.preventDefault();
-    const offerId = evt.target.id.replace('offer-', '');
+    const offerId = evt.target.value;
 
     const currentOffers = this._state.point?.offers || [];
     const newOffers = evt.target.checked
@@ -274,20 +259,16 @@ export default class EditFormView extends AbstractStatefulView {
       : currentOffers.filter((id) => id !== offerId);
 
     this.updateElement({
-      point: {
-        ...this._state.point,
-        offers: newOffers
-      }
+      ...this._state.point,
+      offers: newOffers
     });
   };
 
   #priceInputHandler = (evt) => {
     evt.preventDefault();
     this.updateElement({
-      point: {
-        ...this._state.point,
-        basePrice: evt.target.value
-      }
+      ...this._state.point,
+      basePrice: evt.target.value
     });
   };
 }
